@@ -2,6 +2,7 @@ import { Telegraf } from 'telegraf'
 import { message } from 'telegraf/filters'
 import 'dotenv/config'
 import fs from 'node:fs'
+import path from 'node:path'
 
 const { TELEGRAM_BOT_TOKEN, WEBHOOK_ADDRESS } = process.env
 
