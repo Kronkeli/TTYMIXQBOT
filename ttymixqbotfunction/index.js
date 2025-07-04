@@ -3,7 +3,12 @@ import { message } from 'telegraf/filters'
 import 'dotenv/config'
 import fs from 'node:fs'
 
-const bot = new Telegraf(process.env.BOT_TOKEN)
+const { TELEGRAM_BOT_TOKEN, WEBHOOK_ADDRESS } = process.env
+
+const bot = new Telegraf(TELEGRAM_BOT_TOKEN, {
+    telegram: { webhookReply: true }
+})
+bot.telegram.setWebhook(WEBHOOK_ADDRESS);
 
 function parseMessage(text) {
   return text.toLowerCase().split(" ");
@@ -11,7 +16,7 @@ function parseMessage(text) {
 
 // Luetaan koodisanat ja niiden merkitykset
 const tiedostoRaw = (tiedostonimi) => {
-  return fs.readFileSync(tiedostonimi, 'utf-8', (err, data) => {
+  return fs.readFileSync(path.resolve(__dirname, tiedostonimi), 'utf-8', (err, data) => {
   if (err) {
     console.error(err);
     return "";
@@ -82,19 +87,19 @@ bot.on(message('text'), async (ctx) => {
 
   await new Promise(r => setTimeout(r, 5000));
 
-  // Tarkistetaan, antaako vihjesana kuvavihjeen
-  avainsanat.forEach(sana => {
-    if (kuvavihjeet[sana] != undefined) {
-      console.log(`OOSUMA LÖYTYI! Nimittäin teksti \n${kuvavihjeet[sana]}`)
-      // Using context shortcut
-      // ctx.reply(kuvavihjeet[sana])
-      ctx.replyWithPhoto({source: kuvavihjeet[sana]})
-      wordFound = true;
-    }
-    else {
-      console.log(`Ei täsmää kuvavihjeistä sana ${sana}`)
-    };
-  });
+  // Tarkistetaan, antaako vihjesana kuvavihjeen -- Ei toimi Azuressa
+  // avainsanat.forEach(sana => {
+  //   if (kuvavihjeet[sana] != undefined) {
+  //     console.log(`OOSUMA LÖYTYI! Nimittäin teksti \n${kuvavihjeet[sana]}`)
+  //     // Using context shortcut
+  //     // ctx.reply(kuvavihjeet[sana])
+  //     ctx.replyWithPhoto({source: kuvavihjeet[sana]})
+  //     wordFound = true;
+  //   }
+  //   else {
+  //     console.log(`Ei täsmää kuvavihjeistä sana ${sana}`)
+  //   };
+  // });
 
   
   const randomVastausInt = Math.floor(Math.random() * virheviestienLkm);
@@ -103,9 +108,7 @@ bot.on(message('text'), async (ctx) => {
   
 })
 
-
-bot.launch()
-
-// Enable graceful stop
-process.once('SIGINT', () => bot.stop('SIGINT'))
-process.once('SIGTERM', () => bot.stop('SIGTERM'))
+// Azure Function:
+module.exports = async function(context, req) {
+    return bot.handleUpdate(req.body, context.res)
+}
