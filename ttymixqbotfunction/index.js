@@ -2,14 +2,20 @@ import { Telegraf } from 'telegraf'
 import { message } from 'telegraf/filters'
 import 'dotenv/config'
 import fs from 'node:fs'
+import { fileURLToPath } from 'url';
 import path from 'node:path'
 
-const { TELEGRAM_BOT_TOKEN, WEBHOOK_ADDRESS } = process.env
+// Jotain ES module hot fixejä
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const { TELEGRAM_BOT_TOKEN, WEBHOOK_ADDRESS, ENVIRONMENT} = process.env
+
 
 const bot = new Telegraf(TELEGRAM_BOT_TOKEN, {
     telegram: { webhookReply: true }
-})
-bot.telegram.setWebhook(WEBHOOK_ADDRESS);
+  })
+  bot.telegram.setWebhook(WEBHOOK_ADDRESS);
 
 function parseMessage(text) {
   return text.toLowerCase().split(" ");
@@ -109,7 +115,12 @@ bot.on(message('text'), async (ctx) => {
   
 })
 
-// Azure Function:
-module.exports = async function(context, req) {
+
+export default async function(context, req) {
     return bot.handleUpdate(req.body, context.res)
 }
+
+if (ENVIRONMENT != 'PROD') {
+  bot.launch()
+}
+
